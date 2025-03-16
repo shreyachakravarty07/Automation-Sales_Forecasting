@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: prophet-pipeline-
+spec:
+  entrypoint: main
+  templates:
+  - name: main
+    steps:
+      - - name: data-processing
+          template: data-processing
+      - - name: train
+          template: train
+          arguments:
+            artifacts:
+            - name: processed-data
+              from: "{{steps.data-processing.outputs.artifacts.processed-data}}"
+      - - name: predict
+          template: predict
+          arguments:
+            artifacts:
+            - name: model-file
+              from: "{{steps.train.outputs.artifacts.model-file}}"
+
+  # STEP 1
+  - name: data-processing
+    container:
+      image: palashthakur06/argo-prophet:latest
+      command: ["python"]
+      args: ["data_processing.py"]
+    outputs:
+      artifacts:
+      - name: processed-data
+        path: /app/processed_data.csv
+
+  # STEP 2
+  - name: train
+    inputs:
+      artifacts:
+      - name: processed-data
+        path: /app/processed_data.csv
+    container:
+      image: palashthakur06/argo-prophet:latest
+      command: ["python"]
+      args: ["train_prophet.py"]
+    outputs:
+      artifacts:
+      - name: model-file
+        path: /app/prophet_model.joblib
+
+  # STEP 3
+  - name: predict
+    inputs:
+      artifacts:
+      - name: model-file
+        path: /app/prophet_model.joblib
+    container:
+      image: palashthakur06/argo-prophet:latest
+      command: ["python"]
+      args: ["predict_prophet.py"]
