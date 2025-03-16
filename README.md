@@ -101,5 +101,15 @@ docker build -t fastapi-prophet:latest .
 docker run -p 8000:8000 fastapi-prophet:latest
 ```
 
+
+### 5. Testing the API
+```bash
+# Test prediction endpoint
+curl -X POST "http://localhost:8000/predict" \
+    -H "Content-Type: application/json" \
+    -d '{"ds": "2025-03-17"}'
+```
+
+
 ## Project Overview
 This project demonstrates an automated ML pipeline using Argo Workflows on Kubernetes. Each component (data processing, training, and prediction) is containerized and orchestrated by Kubernetes, ensuring independent execution with proper dependency management.
