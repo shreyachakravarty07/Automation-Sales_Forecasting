@@ -45,6 +45,9 @@ curl -LO "https://dl.k8s.io/release/$(curl -L https://dl.k8s.io/release/stable.t
 chmod +x kubectl
 sudo mv kubectl /usr/local/bin/
 kubectl version --client
+
+# Get nodes, will display minikube with status READY
+kubectl get nodes
 ```
 
 ### 4. Argo Workflows Setup
@@ -67,9 +70,17 @@ sudo mv argo-linux-amd64 /usr/local/bin/argo
 
 ### 1. Docker Image Creation
 ```bash
+# Optionally, if you prefer building Docker images using Minikube's Docker daemon, run:
+eval $(minikube docker-env)
+
+# Ensure you're authenticated with Docker Hub if you're pushing the image:
+docker login
+
 # Build and push Docker image
 docker build -t <your-dockerhub-user>/argo-prophet:latest .
 docker push <your-dockerhub-user>/argo-prophet:latest
+
+# Note: Make sure that the 'argo_workflow.yaml' file is correctly configured and available in your project directory.
 ```
 
 ### 2. Running the Pipeline
@@ -87,7 +98,7 @@ kubectl -n argo port-forward service/argo-server 2746:2746
 # List workflows
 argo list -n argo
 
-# View logs, change prophet-pipeline-kvzld to your workflow name
+# View logs (change 'prophet-pipeline-kvzld' to your workflow name)
 argo logs prophet-pipeline-kvzld -n argo --follow
 
 # Monitor pods
@@ -101,7 +112,6 @@ docker build -t fastapi-prophet:latest .
 docker run -p 8000:8000 fastapi-prophet:latest
 ```
 
-
 ### 5. Testing the API
 ```bash
 # Test prediction endpoint
@@ -110,6 +120,14 @@ curl -X POST "http://localhost:8000/predict" \
     -d '{"ds": "2025-03-17"}'
 ```
 
+## Cleanup and Resource Management
+```bash
+# To delete workflows:
+argo delete --all -n argo
+
+# To stop the minikube cluster:
+minikube stop
+```
 
 ## Project Overview
 This project demonstrates an automated ML pipeline using Argo Workflows on Kubernetes. Each component (data processing, training, and prediction) is containerized and orchestrated by Kubernetes, ensuring independent execution with proper dependency management.
